@@ -155,10 +155,12 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Source\App.cpp" />
     <ClCompile Include="Source\main.cpp" />
     <ClCompile Include="Source\Window.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Headers\App.h" />
     <ClInclude Include="Headers\glfwInclude.h" />
     <ClInclude Include="Headers\glmInclude.h" />
     <ClInclude Include="Headers\Window.h" />

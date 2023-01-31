@@ -2,11 +2,11 @@
 
 using namespace Core;
 
-Window::Window(std::string name, int width, int height) :
-	m_name(name), m_width(width), m_height(height)
+Window::Window(WindowInfo info) :
+	m_info(info)
 {
 	glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-	m_window = glfwCreateWindow(width, height, name.c_str(), nullptr, nullptr);
+	m_window = glfwCreateWindow(info.width, info.height, info.name.c_str(), nullptr, nullptr);
 }
 
 GLFWwindow* Window::Get()

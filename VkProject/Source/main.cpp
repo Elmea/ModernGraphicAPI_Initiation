@@ -2,19 +2,14 @@
 #include "glmInclude.h"
 
 #include "Window.h"
+#include "App.h"
 
 int main() {
-    glfwInit();
+        
+    Core::App app;
+    app.Awake({ "Vulkan initiation", 800, 600 });
 
-    Core::Window window { "Vulkan initiation", 800, 600 };
-
-    while (!glfwWindowShouldClose(window.Get())) 
-    {
-        glfwPollEvents();
-    }
-
-    window.Destroy();
-    glfwTerminate();
+    app.Update();
 
     return 0;
 }

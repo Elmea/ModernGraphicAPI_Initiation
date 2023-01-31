@@ -5,15 +5,20 @@
 
 namespace Core
 {
+	struct WindowInfo
+	{
+		std::string name;
+		int width, height;
+	};
+
 	class Window
 	{
 	private:
-		std::string m_name;
-		int m_width, m_height;
+		const WindowInfo m_info;
 		GLFWwindow* m_window;
 
 	public:
-		Window(std::string name, int width, int height);
+		Window(WindowInfo info);
 		GLFWwindow* Get();
 		void Destroy();
 	};
