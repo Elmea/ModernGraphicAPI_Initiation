@@ -31,4 +31,4 @@ x64/
 *.svclog
 *.scc
 *.ini
-Debug\*
+VkProject\Debug\*
