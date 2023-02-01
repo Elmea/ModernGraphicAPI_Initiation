@@ -31,3 +31,4 @@ x64/
 *.svclog
 *.scc
 *.ini
+Debug\*
