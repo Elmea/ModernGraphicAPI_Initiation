@@ -1,13 +1,10 @@
 #include <stdexcept>
 #include <iostream>
-#include <optional>
-#include <cassert>
 #include <map>
 
 #include "App.h"
 
 using namespace Core;
-
 
 App::App(WindowInfo windowInfo) 
 {
@@ -97,15 +94,6 @@ void App::SetupDebugger()
     #pragma endregion
 
     #pragma region GPUSetup
-struct QueueFamilyIndices 
-{
-    std::optional<uint32_t> graphicsFamily;
-
-    bool IsComplete() 
-    {
-        return graphicsFamily.has_value();
-    }
-};
 
 QueueFamilyIndices FindQueueFamilies(VkPhysicalDevice device) 
 {
@@ -121,6 +109,8 @@ QueueFamilyIndices FindQueueFamilies(VkPhysicalDevice device)
     {
         if (queueFamilies[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) 
             indices.graphicsFamily = i;
+
+        if (indices.IsComplete()) break;
     }
 
     return indices;
@@ -183,6 +173,7 @@ void App::PickPhysicalDevice()
     if (candidates.rbegin()->first > 0)
     {
         physicalDevice = candidates.rbegin()->second;
+        physicalDeviceQueueFamily = FindQueueFamilies(physicalDevice);
 
         VkPhysicalDeviceProperties deviceProperties;
         vkGetPhysicalDeviceProperties(physicalDevice, &deviceProperties);
@@ -192,6 +183,45 @@ void App::PickPhysicalDevice()
     }
 
     throw std::runtime_error("Failed to find a suitable GPU for vulkan");
+}
+    #pragma endregion
+
+    #pragma region LogicalDeviceSetup
+void App::CreateLogicalDevice()
+{
+    VkDeviceQueueCreateInfo queueCreateInfo{};
+
+    queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+    queueCreateInfo.queueFamilyIndex = physicalDeviceQueueFamily.graphicsFamily.value();
+    queueCreateInfo.queueCount = 1;
+
+    float queuePriority = 1.0f;
+    queueCreateInfo.pQueuePriorities = &queuePriority;
+
+    VkDeviceCreateInfo lDeviceCreateInfo{};
+    lDeviceCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+    lDeviceCreateInfo.pQueueCreateInfos = &queueCreateInfo;
+    lDeviceCreateInfo.queueCreateInfoCount = 1;
+
+    VkPhysicalDeviceFeatures deviceFeatures{};
+    lDeviceCreateInfo.pEnabledFeatures = &deviceFeatures;
+
+    lDeviceCreateInfo.enabledExtensionCount = 0;
+
+    if (enableValidationLayers) 
+    {
+        lDeviceCreateInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
+        lDeviceCreateInfo.ppEnabledLayerNames = validationLayers.data();
+    }
+    else 
+    {
+        lDeviceCreateInfo.enabledLayerCount = 0;
+    }
+
+    if (vkCreateDevice(physicalDevice, &lDeviceCreateInfo, nullptr, &m_logicalDevice) != VK_SUCCESS)
+        throw std::runtime_error("Failed to create a logical device");
+
+    std::cout << "Logical device created successfuly" << std::endl;
 }
     #pragma endregion
 
@@ -277,6 +307,7 @@ void App::InitVulkan()
     CreateVkInstance();
     SetupDebugger();
     PickPhysicalDevice();
+    CreateLogicalDevice();
 }
     #pragma endregion
 
@@ -309,6 +340,7 @@ void App::Destroy()
     if (enableValidationLayers) 
         DestroyDebugUtilsMessengerEXT(m_instance, m_debugMessenger, nullptr);
 
+    vkDestroyDevice(m_logicalDevice, nullptr);
     vkDestroyInstance(m_instance, nullptr);
 
     m_window->Destroy();

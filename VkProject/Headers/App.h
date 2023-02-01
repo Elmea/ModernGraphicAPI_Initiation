@@ -1,14 +1,13 @@
 #pragma once
 #include <vulkan/vulkan.h>
+#include <optional>
 #include <vector>
 
 #include "Window.h"
 
 #ifdef NDEBUG
-#   define assert(condition) ((void)0)
 const bool enableValidationLayers = false;
 #else
-#   define assert(condition) 
 const bool enableValidationLayers = true;
 #endif
 
@@ -23,6 +22,16 @@ namespace Core
 		VkDebugUtilsMessageTypeFlagsEXT messageType,
 		const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
 		void* pUserData);
+
+	struct QueueFamilyIndices
+	{
+		std::optional<uint32_t> graphicsFamily;
+
+		bool IsComplete()
+		{
+			return graphicsFamily.has_value();
+		}
+	};
 
 	class App
 	{
@@ -41,11 +50,18 @@ namespace Core
 		const char** m_glfwExtensions;
 		VkDebugUtilsMessengerEXT m_debugMessenger;
 
+		// Physical device var
 		VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
+		QueueFamilyIndices physicalDeviceQueueFamily;
+
+		// Logical device var
+		VkDevice m_logicalDevice;
+		VkQueue m_graphicsQueue;
+
 
 		void MainLoop();
 		void Destroy();
-		
+
 		// Vulkan Initialisation methods
 		void InitVulkan();
 		void CreateVkInstance();
@@ -60,5 +76,8 @@ namespace Core
 
 		// Vulkan GPU setup
 		void PickPhysicalDevice();
+
+		// Vulkan logical device Setup
+		void CreateLogicalDevice();
 	};
 }
