@@ -7,7 +7,7 @@
 using namespace Core;
 
 
-void App::Awake(WindowInfo windowInfo) 
+App::App(WindowInfo windowInfo) 
 {
     glfwInit();
     m_window = new Window(windowInfo);

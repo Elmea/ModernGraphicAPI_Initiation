@@ -27,9 +27,10 @@ namespace Core
 	class App
 	{
 	public:
-		void Awake(WindowInfo windowInfo);
+		App(WindowInfo windowInfo);
+		~App() { Destroy(); }
+		
 		void Run();
-		void Destroy();
 
 	private:
 		VkInstance m_instance;
@@ -40,9 +41,14 @@ namespace Core
 		VkDebugUtilsMessengerEXT m_debugMessenger;
 
 		void MainLoop();
+		void Destroy();
+		
+		// Vulkan Initialisation methods
 		void InitVulkan();
 		void CreateVkInstance();
 		bool CheckValidationLayerSupport();
+
+		// Vulkan debug initialisation methods
 		std::vector<const char*> GetDebugExtensions();
 		void SetupDebugger();
 		VkResult CreateDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkDebugUtilsMessengerEXT* pDebugMessenger);

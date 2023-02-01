@@ -6,11 +6,9 @@
 
 int main() {
         
-    Core::App app;
+    Core::App app{ { "Vulkan initiation", 800, 600 } };
 
-    app.Awake({ "Vulkan initiation", 800, 600 });
     app.Run();
-    app.Destroy();
 
     return 0;
 }
