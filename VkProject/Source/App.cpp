@@ -1,6 +1,8 @@
 #include <stdexcept>
 #include <iostream>
+#include <optional>
 #include <cassert>
+#include <map>
 
 #include "App.h"
 
@@ -94,6 +96,106 @@ void App::SetupDebugger()
 }
     #pragma endregion
 
+    #pragma region GPUSetup
+struct QueueFamilyIndices 
+{
+    std::optional<uint32_t> graphicsFamily;
+
+    bool IsComplete() 
+    {
+        return graphicsFamily.has_value();
+    }
+};
+
+QueueFamilyIndices FindQueueFamilies(VkPhysicalDevice device) 
+{
+    QueueFamilyIndices indices;
+
+    uint32_t queueFamilyCount = 0;
+    vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, nullptr);
+
+    std::vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);
+    vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, queueFamilies.data());
+
+    for (int i = 0; i < queueFamilyCount; i++)
+    {
+        if (queueFamilies[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) 
+            indices.graphicsFamily = i;
+    }
+
+    return indices;
+}
+
+int RateDeviceSuitability(VkPhysicalDevice device) 
+{
+    VkPhysicalDeviceProperties deviceProperties;
+    vkGetPhysicalDeviceProperties(device, &deviceProperties);
+
+    VkPhysicalDeviceFeatures deviceFeatures;
+    vkGetPhysicalDeviceFeatures(device, &deviceFeatures);
+
+    // Application can't function without geometry shaders
+    if (!deviceFeatures.geometryShader) {
+        return 0;
+    }
+
+    int score = 0;
+
+    // Discrete GPUs have a significant performance advantage
+    if (deviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU) {
+        score += 1000;
+    }
+
+    score += deviceProperties.limits.maxImageDimension2D;
+
+    return score;
+}
+
+bool IsDeviceSuitable(VkPhysicalDevice device) 
+{
+    QueueFamilyIndices indices = FindQueueFamilies(device);
+
+    return indices.IsComplete();
+}
+
+void App::PickPhysicalDevice()
+{
+    uint32_t deviceCount = 5;
+    vkEnumeratePhysicalDevices(m_instance, &deviceCount, nullptr);
+    
+    if (deviceCount == 0) throw std::runtime_error("Can't find GPUs with Vulkan support");
+
+    std::vector<VkPhysicalDevice> devices(deviceCount);
+    vkEnumeratePhysicalDevices(m_instance, &deviceCount, devices.data());
+
+
+    std::multimap<int, VkPhysicalDevice> candidates;
+
+    for (const VkPhysicalDevice device : devices)
+    {
+        if (!IsDeviceSuitable(device))
+            continue;
+
+        int score = RateDeviceSuitability(device);
+        candidates.insert(std::make_pair(score, device));
+    }
+
+    if (candidates.rbegin()->first > 0)
+    {
+        physicalDevice = candidates.rbegin()->second;
+
+        VkPhysicalDeviceProperties deviceProperties;
+        vkGetPhysicalDeviceProperties(physicalDevice, &deviceProperties);
+
+        std::cout << "Physical device selected : " << deviceProperties.deviceName << std::endl;
+        return;
+    }
+
+    throw std::runtime_error("Failed to find a suitable GPU for vulkan");
+}
+    #pragma endregion
+
+    #pragma region Setup
 void App::CreateVkInstance()
 {
     if (enableValidationLayers && !CheckValidationLayerSupport()) 
@@ -174,7 +276,9 @@ void App::InitVulkan()
 {
     CreateVkInstance();
     SetupDebugger();
+    PickPhysicalDevice();
 }
+    #pragma endregion
 
 #pragma endregion
 
@@ -203,9 +307,7 @@ void App::MainLoop()
 void App::Destroy() 
 {
     if (enableValidationLayers) 
-    {
         DestroyDebugUtilsMessengerEXT(m_instance, m_debugMessenger, nullptr);
-    }
 
     vkDestroyInstance(m_instance, nullptr);
 

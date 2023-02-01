@@ -33,12 +33,15 @@ namespace Core
 		void Run();
 
 	private:
-		VkInstance m_instance;
 		Window* m_window;
+
+		VkInstance m_instance;
 
 		uint32_t m_glfwExtensionCount = 0;
 		const char** m_glfwExtensions;
 		VkDebugUtilsMessengerEXT m_debugMessenger;
+
+		VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
 
 		void MainLoop();
 		void Destroy();
@@ -54,5 +57,8 @@ namespace Core
 		VkResult CreateDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkDebugUtilsMessengerEXT* pDebugMessenger);
 		void DestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT debugMessenger, const VkAllocationCallbacks* pAllocator);
 		void DebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo);
+
+		// Vulkan GPU setup
+		void PickPhysicalDevice();
 	};
 }
