@@ -14,14 +14,14 @@ const bool enableValidationLayers = true;
 
 namespace Core
 {
-	const std::vector<const char*> validationLayers = {
-		"VK_LAYER_KHRONOS_validation"
-	};
+	const std::vector<const char*> validationLayers { "VK_LAYER_KHRONOS_validation" };
+
+	const std::vector<const char*> deviceExtensions { VK_KHR_SWAPCHAIN_EXTENSION_NAME };
 
 	static VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallBack(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
-		VkDebugUtilsMessageTypeFlagsEXT messageType,
-		const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
-		void* pUserData);
+														VkDebugUtilsMessageTypeFlagsEXT messageType,
+														const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
+														void* pUserData);
 
 	struct QueueFamilyIndices
 	{
@@ -33,6 +33,14 @@ namespace Core
 			return graphicsFamily.has_value() && presentFamily.has_value();
 		}
 	};
+
+	struct SwapChainSupportDetails 
+	{
+		VkSurfaceCapabilitiesKHR capabilities;
+		std::vector<VkSurfaceFormatKHR> formats;
+		std::vector<VkPresentModeKHR> presentModes;
+	};
+
 
 	class App
 	{
@@ -89,6 +97,9 @@ namespace Core
 
 		// Vulkan window Setup
 		void CreateSurface();
+		
+		// Vulkan Swapchain setup
+		SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice device);
 		#pragma endregion
 	};
 }

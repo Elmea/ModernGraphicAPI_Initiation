@@ -9,6 +9,7 @@
 
 using namespace Core;
 
+
 App::App(WindowInfo windowInfo) 
 {
     glfwInit();
@@ -98,6 +99,23 @@ void App::SetupDebugger()
 
     #pragma region GPUSetup
 
+bool checkDeviceExtensionSupport(VkPhysicalDevice device) 
+{
+    uint32_t extensionCount;
+    vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, nullptr);
+
+    std::vector<VkExtensionProperties> availableExtensions(extensionCount);
+    vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, availableExtensions.data());
+
+    std::set<std::string> requiredExtensions(deviceExtensions.begin(), deviceExtensions.end());
+
+    for (const auto& extension : availableExtensions) {
+        requiredExtensions.erase(extension.extensionName);
+    }
+
+    return requiredExtensions.empty();
+}
+
 QueueFamilyIndices App::FindQueueFamilies(VkPhysicalDevice device) 
 {
     QueueFamilyIndices indices;
@@ -154,7 +172,7 @@ bool App::IsDeviceSuitable(VkPhysicalDevice device)
 {
     QueueFamilyIndices indices = FindQueueFamilies(device);
 
-    return indices.IsComplete();
+    return indices.IsComplete() && checkDeviceExtensionSupport(device);
 }
 
 void App::PickPhysicalDevice()
@@ -230,7 +248,8 @@ void App::CreateLogicalDevice()
     VkPhysicalDeviceFeatures deviceFeatures{};
     lDeviceCreateInfo.pEnabledFeatures = &deviceFeatures;
 
-    lDeviceCreateInfo.enabledExtensionCount = 0;
+    lDeviceCreateInfo.enabledExtensionCount = static_cast<uint32_t>(deviceExtensions.size());
+    lDeviceCreateInfo.ppEnabledExtensionNames = deviceExtensions.data();
 
     if (enableValidationLayers) 
     {
@@ -263,6 +282,17 @@ void App::CreateSurface()
         throw std::runtime_error("Failed to create window surface");
     
     std::cout << "\033[32;1m" << "Window surface created successfuly" << "\033[0m" << std::endl;
+}
+    #pragma endregion
+
+    #pragma region SwapChainSetup
+SwapChainSupportDetails App::querySwapChainSupport(VkPhysicalDevice device)
+{
+    SwapChainSupportDetails details;
+    
+    vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, m_surface, &details.capabilities);
+
+    return details;
 }
     #pragma endregion
 
