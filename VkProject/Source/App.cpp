@@ -1,6 +1,9 @@
+#include "glfwInclude.h"
+
 #include <stdexcept>
 #include <iostream>
 #include <map>
+#include <set>
 
 #include "App.h"
 
@@ -27,10 +30,10 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL Core::DebugCallBack(VkDebugUtilsMessageSev
         std::cout << callbackData->pMessage << std::endl;
         break;
     case VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT:
-        std::cout << "\033[33m" << callbackData->pMessage << "\033[0m\n";
+        std::cout << "\033[33;1m" << callbackData->pMessage << "\033[0m\n";
         break;
     case VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT:
-        std::cout << "\033[31m"<< callbackData->pMessage <<"\033[0m\n";
+        std::cout << "\033[31;1m"<< callbackData->pMessage <<"\033[0m\n";
         break;
     default:
         break;
@@ -95,7 +98,7 @@ void App::SetupDebugger()
 
     #pragma region GPUSetup
 
-QueueFamilyIndices FindQueueFamilies(VkPhysicalDevice device) 
+QueueFamilyIndices App::FindQueueFamilies(VkPhysicalDevice device) 
 {
     QueueFamilyIndices indices;
 
@@ -109,6 +112,12 @@ QueueFamilyIndices FindQueueFamilies(VkPhysicalDevice device)
     {
         if (queueFamilies[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) 
             indices.graphicsFamily = i;
+
+        VkBool32 presentSupport = false;
+        vkGetPhysicalDeviceSurfaceSupportKHR(device, i, m_surface, &presentSupport);
+        
+        if (presentSupport) 
+            indices.presentFamily = i;
 
         if (indices.IsComplete()) break;
     }
@@ -141,7 +150,7 @@ int RateDeviceSuitability(VkPhysicalDevice device)
     return score;
 }
 
-bool IsDeviceSuitable(VkPhysicalDevice device) 
+bool App::IsDeviceSuitable(VkPhysicalDevice device) 
 {
     QueueFamilyIndices indices = FindQueueFamilies(device);
 
@@ -178,7 +187,7 @@ void App::PickPhysicalDevice()
         VkPhysicalDeviceProperties deviceProperties;
         vkGetPhysicalDeviceProperties(physicalDevice, &deviceProperties);
 
-        std::cout << "Physical device selected : " << deviceProperties.deviceName << std::endl;
+        std::cout << "\033[32;1m" << "Physical device selected : \033[36m" << deviceProperties.deviceName << "\033[0m\n";
         return;
     }
 
@@ -200,8 +209,23 @@ void App::CreateLogicalDevice()
 
     VkDeviceCreateInfo lDeviceCreateInfo{};
     lDeviceCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
-    lDeviceCreateInfo.pQueueCreateInfos = &queueCreateInfo;
-    lDeviceCreateInfo.queueCreateInfoCount = 1;
+
+    std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
+    std::set<uint32_t> uniqueQueueFamilies{ physicalDeviceQueueFamily.graphicsFamily.value(), physicalDeviceQueueFamily.presentFamily.value() };
+
+    for (uint32_t queueFamily : uniqueQueueFamilies)
+    {
+        VkDeviceQueueCreateInfo queueCreateInfo{};
+        queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+        queueCreateInfo.queueFamilyIndex = queueFamily;
+        queueCreateInfo.queueCount = 1;
+        queueCreateInfo.pQueuePriorities = &queuePriority;
+        queueCreateInfos.push_back(queueCreateInfo);
+    }
+
+    lDeviceCreateInfo.queueCreateInfoCount = static_cast<uint32_t>(queueCreateInfos.size());
+    lDeviceCreateInfo.pQueueCreateInfos = queueCreateInfos.data();
+
 
     VkPhysicalDeviceFeatures deviceFeatures{};
     lDeviceCreateInfo.pEnabledFeatures = &deviceFeatures;
@@ -221,7 +245,24 @@ void App::CreateLogicalDevice()
     if (vkCreateDevice(physicalDevice, &lDeviceCreateInfo, nullptr, &m_logicalDevice) != VK_SUCCESS)
         throw std::runtime_error("Failed to create a logical device");
 
-    std::cout << "Logical device created successfuly" << std::endl;
+    vkGetDeviceQueue(m_logicalDevice, physicalDeviceQueueFamily.presentFamily.value(), 0, &m_graphicsQueue);
+
+    std::cout << "\033[32;1m" << "Logical device created successfuly" << "\033[0m" << std::endl;
+}
+    #pragma endregion
+
+    #pragma region WindowSetup
+void App::CreateSurface()
+{
+    VkWin32SurfaceCreateInfoKHR createInfo{};
+    createInfo.sType = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
+    createInfo.hwnd = glfwGetWin32Window(m_window->Get());
+    createInfo.hinstance = GetModuleHandle(nullptr);
+
+    if (glfwCreateWindowSurface(m_instance, m_window->Get(), nullptr, &m_surface) != VK_SUCCESS)
+        throw std::runtime_error("Failed to create window surface");
+    
+    std::cout << "\033[32;1m" << "Window surface created successfuly" << "\033[0m" << std::endl;
 }
     #pragma endregion
 
@@ -272,7 +313,7 @@ void App::CreateVkInstance()
     }
     else
     {
-        std::cout << "Vulkan Instance created succefuly" << std::endl;
+        std::cout << "\033[32;1mVulkan Instance created succefuly\033[0m" << std::endl;
     }
 }
 
@@ -306,7 +347,8 @@ void App::InitVulkan()
 {
     CreateVkInstance();
     SetupDebugger();
-    PickPhysicalDevice();
+    CreateSurface();
+    PickPhysicalDevice(); 
     CreateLogicalDevice();
 }
     #pragma endregion
@@ -341,6 +383,7 @@ void App::Destroy()
         DestroyDebugUtilsMessengerEXT(m_instance, m_debugMessenger, nullptr);
 
     vkDestroyDevice(m_logicalDevice, nullptr);
+    vkDestroySurfaceKHR(m_instance, m_surface, nullptr);
     vkDestroyInstance(m_instance, nullptr);
 
     m_window->Destroy();

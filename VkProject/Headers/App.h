@@ -26,10 +26,11 @@ namespace Core
 	struct QueueFamilyIndices
 	{
 		std::optional<uint32_t> graphicsFamily;
+		std::optional<uint32_t> presentFamily;
 
 		bool IsComplete()
 		{
-			return graphicsFamily.has_value();
+			return graphicsFamily.has_value() && presentFamily.has_value();
 		}
 	};
 
@@ -50,6 +51,10 @@ namespace Core
 		const char** m_glfwExtensions;
 		VkDebugUtilsMessengerEXT m_debugMessenger;
 
+		void MainLoop();
+		void Destroy();
+
+		#pragma region VkSetup
 		// Physical device var
 		VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
 		QueueFamilyIndices physicalDeviceQueueFamily;
@@ -58,9 +63,9 @@ namespace Core
 		VkDevice m_logicalDevice;
 		VkQueue m_graphicsQueue;
 
-
-		void MainLoop();
-		void Destroy();
+		// Window var
+		VkSurfaceKHR m_surface;
+		VkQueue m_presentQueue;
 
 		// Vulkan Initialisation methods
 		void InitVulkan();
@@ -75,9 +80,15 @@ namespace Core
 		void DebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo);
 
 		// Vulkan GPU setup
+		QueueFamilyIndices FindQueueFamilies(VkPhysicalDevice device);
+		bool IsDeviceSuitable(VkPhysicalDevice device);
 		void PickPhysicalDevice();
 
 		// Vulkan logical device Setup
 		void CreateLogicalDevice();
+
+		// Vulkan window Setup
+		void CreateSurface();
+		#pragma endregion
 	};
 }
