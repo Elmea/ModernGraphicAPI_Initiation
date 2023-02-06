@@ -4,6 +4,13 @@
 #include <iostream>
 #include <map>
 #include <set>
+#include <limits> 
+#include <algorithm> 
+#include <cstdint> 
+
+#ifdef max
+#undef max
+#endif
 
 #include "App.h"
 
@@ -99,7 +106,7 @@ void App::SetupDebugger()
 
     #pragma region GPUSetup
 
-bool checkDeviceExtensionSupport(VkPhysicalDevice device) 
+bool CheckDeviceExtensionSupport(VkPhysicalDevice device) 
 {
     uint32_t extensionCount;
     vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, nullptr);
@@ -172,7 +179,16 @@ bool App::IsDeviceSuitable(VkPhysicalDevice device)
 {
     QueueFamilyIndices indices = FindQueueFamilies(device);
 
-    return indices.IsComplete() && checkDeviceExtensionSupport(device);
+    bool extensionsSupported = CheckDeviceExtensionSupport(device);
+
+    bool swapChainAdequate = false;
+    if (extensionsSupported) 
+    {
+        SwapChainSupportDetails swapChainSupport = QuerySwapChainSupport(device);
+        swapChainAdequate = !swapChainSupport.formats.empty() && !swapChainSupport.presentModes.empty();
+    }
+
+    return indices.IsComplete() && extensionsSupported && swapChainAdequate;
 }
 
 void App::PickPhysicalDevice()
@@ -286,13 +302,131 @@ void App::CreateSurface()
     #pragma endregion
 
     #pragma region SwapChainSetup
-SwapChainSupportDetails App::querySwapChainSupport(VkPhysicalDevice device)
+SwapChainSupportDetails App::QuerySwapChainSupport(VkPhysicalDevice device)
 {
     SwapChainSupportDetails details;
+    uint32_t formatCount, presentModeCount;
     
     vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, m_surface, &details.capabilities);
+    vkGetPhysicalDeviceSurfaceFormatsKHR(device, m_surface, &formatCount, nullptr);
+    vkGetPhysicalDeviceSurfacePresentModesKHR(device, m_surface, &presentModeCount, nullptr);
+
+    if (formatCount != 0) 
+    {
+        details.formats.resize(formatCount);
+        vkGetPhysicalDeviceSurfaceFormatsKHR(device, m_surface, &formatCount, details.formats.data());
+    }
+
+    if (presentModeCount != 0) 
+    {
+        details.presentModes.resize(presentModeCount);
+        vkGetPhysicalDeviceSurfacePresentModesKHR(device, m_surface, &presentModeCount, details.presentModes.data());
+    }
 
     return details;
+}
+
+// The three following method will be used to optimise the support of the swap chains.
+
+// Choose a format for color and depthColor
+VkSurfaceFormatKHR ChooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats)
+{
+    for (const VkSurfaceFormatKHR& format : availableFormats)
+    {
+        if (format.format == VK_FORMAT_B8G8R8A8_SRGB && format.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR) {
+            return format;
+        }
+
+        return availableFormats[0];
+    }
+}
+
+// Choose a swap chains presentation mode, we'll use mailbox if its available
+VkPresentModeKHR ChooseSwapPresentMode(const std::vector<VkPresentModeKHR>&availablePresentModes)
+{
+    for (const VkPresentModeKHR& presentMode : availablePresentModes)
+    {
+        if (presentMode == VK_PRESENT_MODE_MAILBOX_KHR)
+        {
+            return presentMode;
+        }
+    }
+
+    return VK_PRESENT_MODE_FIFO_KHR;
+}
+
+VkExtent2D App::ChooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities) 
+{
+    if (capabilities.currentExtent.width != std::numeric_limits<uint32_t>::max()) 
+    {
+        return capabilities.currentExtent;
+    }
+    else 
+    {
+        int width, height;
+        glfwGetFramebufferSize(m_window->Get(), &width, &height);
+
+        VkExtent2D actualExtent = {
+            static_cast<uint32_t>(width),
+            static_cast<uint32_t>(height)
+        };
+
+        actualExtent.width = std::clamp(actualExtent.width, capabilities.minImageExtent.width, capabilities.maxImageExtent.width);
+        actualExtent.height = std::clamp(actualExtent.height, capabilities.minImageExtent.height, capabilities.maxImageExtent.height);
+
+        return actualExtent;
+    }
+}
+
+void App::CreateSwapChain()
+{
+    SwapChainSupportDetails swapChainSupport = QuerySwapChainSupport(physicalDevice);
+
+    VkSurfaceFormatKHR surfaceFormat = ChooseSwapSurfaceFormat(swapChainSupport.formats);
+    VkPresentModeKHR presentMode = ChooseSwapPresentMode(swapChainSupport.presentModes);
+    VkExtent2D extent = ChooseSwapExtent(swapChainSupport.capabilities);
+
+    uint32_t imageCount = swapChainSupport.capabilities.minImageCount + 1;
+
+    if (swapChainSupport.capabilities.maxImageCount > 0 && imageCount > swapChainSupport.capabilities.maxImageCount) 
+    {
+        imageCount = swapChainSupport.capabilities.maxImageCount;
+    }
+
+    VkSwapchainCreateInfoKHR createInfo{};
+    createInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
+    createInfo.surface = m_surface;
+    createInfo.minImageCount = imageCount;
+    createInfo.imageFormat = surfaceFormat.format;
+    createInfo.imageColorSpace = surfaceFormat.colorSpace;
+    createInfo.imageExtent = extent;
+    createInfo.imageArrayLayers = 1;
+    createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+
+    uint32_t queueFamilyIndices[] = { physicalDeviceQueueFamily.graphicsFamily.value(), physicalDeviceQueueFamily.presentFamily.value() };
+    if (physicalDeviceQueueFamily.graphicsFamily != physicalDeviceQueueFamily.presentFamily)
+    {
+        createInfo.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
+        createInfo.queueFamilyIndexCount = 2;
+        createInfo.pQueueFamilyIndices = queueFamilyIndices;
+    }
+    else 
+    {
+        createInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    }
+
+    createInfo.preTransform = swapChainSupport.capabilities.currentTransform;
+    createInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
+    createInfo.presentMode = presentMode;
+    createInfo.clipped = VK_TRUE;
+    createInfo.oldSwapchain = VK_NULL_HANDLE;
+
+    if (vkCreateSwapchainKHR(m_logicalDevice, &createInfo, nullptr, &swapChain) != VK_SUCCESS)
+    {
+        throw std::runtime_error("Failed to create swap chain");
+    }
+
+    std::cout << "\033[32;1m" << "Swapchain created successfuly" << "\033[0m" << std::endl;
 }
     #pragma endregion
 
@@ -380,6 +514,7 @@ void App::InitVulkan()
     CreateSurface();
     PickPhysicalDevice(); 
     CreateLogicalDevice();
+    CreateSwapChain();
 }
     #pragma endregion
 
@@ -414,8 +549,9 @@ void App::Destroy()
 
     vkDestroyDevice(m_logicalDevice, nullptr);
     vkDestroySurfaceKHR(m_instance, m_surface, nullptr);
-    vkDestroyInstance(m_instance, nullptr);
+    vkDestroySwapchainKHR(m_logicalDevice, swapChain, nullptr);
 
+    vkDestroyInstance(m_instance, nullptr);
     m_window->Destroy();
     delete m_window;
     glfwTerminate();

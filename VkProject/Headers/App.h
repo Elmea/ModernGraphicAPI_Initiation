@@ -75,6 +75,9 @@ namespace Core
 		VkSurfaceKHR m_surface;
 		VkQueue m_presentQueue;
 
+		// SwapChain var
+		VkSwapchainKHR swapChain;
+
 		// Vulkan Initialisation methods
 		void InitVulkan();
 		void CreateVkInstance();
@@ -99,7 +102,9 @@ namespace Core
 		void CreateSurface();
 		
 		// Vulkan Swapchain setup
-		SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice device);
+		SwapChainSupportDetails QuerySwapChainSupport(VkPhysicalDevice device);
+		VkExtent2D ChooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities);
+		void CreateSwapChain();
 		#pragma endregion
 	};
 }
