@@ -683,6 +683,35 @@ void App::CreateRenderPass()
 }
     #pragma endregion
 
+#pragma region CommandBuffer
+void App::CreateCommandPool()
+{
+    VkCommandPoolCreateInfo poolInfo{};
+    poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+    poolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+    poolInfo.queueFamilyIndex = physicalDeviceQueueFamily.graphicsFamily.value();
+
+    if (vkCreateCommandPool(m_logicalDevice, &poolInfo, nullptr, &commandPool) != VK_SUCCESS) 
+    {
+        throw std::runtime_error("Failed to create command pool");
+    }
+}
+
+void App::CreateCommandBuffer()
+{
+    VkCommandBufferAllocateInfo allocInfo{};
+    allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+    allocInfo.commandPool = commandPool;
+    allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+    allocInfo.commandBufferCount = 1;
+
+    if (vkAllocateCommandBuffers(m_logicalDevice, &allocInfo, &commandBuffer) != VK_SUCCESS)
+    {
+        throw std::runtime_error("Failed to allocate command buffers");
+    }
+}
+#pragma endregion
+
 void App::CreateFramebuffers()
 {
     swapChainFramebuffers.resize(swapChainImageViews.size());
@@ -800,6 +829,7 @@ void App::InitVulkan()
     CreateRenderPass();
     CreateGraphicsPipeline();
     CreateFramebuffers();
+    CreateCommandPool();
 }
     #pragma endregion
 
@@ -838,6 +868,7 @@ void App::Destroy()
 
     vkDestroySurfaceKHR(m_instance, m_surface, nullptr);
     vkDestroySwapchainKHR(m_logicalDevice, swapChain, nullptr);
+    vkDestroyCommandPool(m_logicalDevice, commandPool, nullptr);
 
     for (VkImageView imageView : swapChainImageViews)
     {

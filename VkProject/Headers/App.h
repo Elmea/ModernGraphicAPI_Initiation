@@ -84,6 +84,9 @@ namespace Core
 
 		std::vector<VkFramebuffer> swapChainFramebuffers;
 
+		VkCommandPool commandPool;
+		VkCommandBuffer commandBuffer;
+
 		// Pipeline var
 		VkPipeline graphicsPipeline;
 		VkRenderPass renderPass;
@@ -125,6 +128,9 @@ namespace Core
 		void CreateGraphicsPipeline();
 		VkShaderModule CreateShaderModule(const std::vector<char>& code);
 		void CreateRenderPass();
+
+		void CreateCommandPool();
+		void CreateCommandBuffer();
 
 		#pragma endregion
 	};
