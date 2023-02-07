@@ -77,6 +77,10 @@ namespace Core
 
 		// SwapChain var
 		VkSwapchainKHR swapChain;
+		std::vector<VkImage> swapChainImages;
+		VkFormat swapChainImageFormat;
+		VkExtent2D swapChainExtent;
+		std::vector<VkImageView> swapChainImageViews;
 
 		// Vulkan Initialisation methods
 		void InitVulkan();
@@ -105,6 +109,9 @@ namespace Core
 		SwapChainSupportDetails QuerySwapChainSupport(VkPhysicalDevice device);
 		VkExtent2D ChooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities);
 		void CreateSwapChain();
+
+		// Image view setup
+		void CreateImageViews();
 		#pragma endregion
 	};
 }

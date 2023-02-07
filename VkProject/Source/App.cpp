@@ -427,9 +427,48 @@ void App::CreateSwapChain()
         throw std::runtime_error("Failed to create swap chain");
     }
 
+    vkGetSwapchainImagesKHR(m_logicalDevice, swapChain, &imageCount, nullptr);
+    swapChainImages.resize(imageCount);
+    vkGetSwapchainImagesKHR(m_logicalDevice, swapChain, &imageCount, swapChainImages.data());
+
+    swapChainImageFormat = surfaceFormat.format;
+    swapChainExtent = extent;
+
     std::cout << "\033[32;1m" << "Swapchain created successfuly" << "\033[0m" << std::endl;
-}
+}   
     #pragma endregion
+
+#pragma region ImageViewSetup
+void App::CreateImageViews()
+{
+    swapChainImageViews.resize(swapChainImages.size());
+
+    for (size_t i = 0; i < swapChainImages.size(); i++) 
+    {
+        VkImageViewCreateInfo createInfo{};
+        createInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+        createInfo.image = swapChainImages[i];
+        createInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+        createInfo.format = swapChainImageFormat;
+        createInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
+        createInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
+        createInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
+        createInfo.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
+        createInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        createInfo.subresourceRange.baseMipLevel = 0;
+        createInfo.subresourceRange.levelCount = 1;
+        createInfo.subresourceRange.baseArrayLayer = 0;
+        createInfo.subresourceRange.layerCount = 1;
+        if (vkCreateImageView(m_logicalDevice, &createInfo, nullptr, &swapChainImageViews[i]) != VK_SUCCESS) 
+        {
+            throw std::runtime_error("failed to create image views!");
+        }
+
+        std::cout << "\033[32;1m" << "Image view " << i << " created successfuly" << "\033[0m" << std::endl;
+    }
+}
+
+#pragma endregion
 
     #pragma region Setup
 void App::CreateVkInstance()
@@ -516,6 +555,7 @@ void App::InitVulkan()
     PickPhysicalDevice(); 
     CreateLogicalDevice();
     CreateSwapChain();
+    CreateImageViews();
 }
     #pragma endregion
 
@@ -551,6 +591,11 @@ void App::Destroy()
     vkDestroyDevice(m_logicalDevice, nullptr);
     vkDestroySurfaceKHR(m_instance, m_surface, nullptr);
     vkDestroySwapchainKHR(m_logicalDevice, swapChain, nullptr);
+
+    for (auto imageView : swapChainImageViews) 
+    {
+        vkDestroyImageView(m_logicalDevice, imageView, nullptr);
+    }
 
     vkDestroyInstance(m_instance, nullptr);
     m_window->Destroy();
