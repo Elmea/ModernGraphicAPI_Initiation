@@ -39,4 +39,15 @@
       <Filter>Fichiers d%27en-tête</Filter>
     </ClInclude>
   </ItemGroup>
+  <ItemGroup>
+    <None Include="Shaders\CompileShaders.bat">
+      <Filter>Fichiers de ressources</Filter>
+    </None>
+    <None Include="Shaders\FragmentShader.frag">
+      <Filter>Fichiers de ressources</Filter>
+    </None>
+    <None Include="Shaders\VertexShader.vert">
+      <Filter>Fichiers de ressources</Filter>
+    </None>
+  </ItemGroup>
 </Project>

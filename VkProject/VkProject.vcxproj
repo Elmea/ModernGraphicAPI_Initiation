@@ -165,6 +165,11 @@
     <ClInclude Include="Headers\glmInclude.h" />
     <ClInclude Include="Headers\Window.h" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="Shaders\CompileShaders.bat" />
+    <None Include="Shaders\FragmentShader.frag" />
+    <None Include="Shaders\VertexShader.vert" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

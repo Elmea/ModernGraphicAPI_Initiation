@@ -32,3 +32,4 @@ x64/
 *.scc
 *.ini
 VkProject\Debug\*
+*.spv

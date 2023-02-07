@@ -82,6 +82,13 @@ namespace Core
 		VkExtent2D swapChainExtent;
 		std::vector<VkImageView> swapChainImageViews;
 
+		std::vector<VkFramebuffer> swapChainFramebuffers;
+
+		// Pipeline var
+		VkPipeline graphicsPipeline;
+		VkRenderPass renderPass;
+		VkPipelineLayout pipelineLayout;
+
 		// Vulkan Initialisation methods
 		void InitVulkan();
 		void CreateVkInstance();
@@ -109,9 +116,16 @@ namespace Core
 		SwapChainSupportDetails QuerySwapChainSupport(VkPhysicalDevice device);
 		VkExtent2D ChooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities);
 		void CreateSwapChain();
+		void CreateFramebuffers();
 
 		// Image view setup
 		void CreateImageViews();
+
+		// Pipeline
+		void CreateGraphicsPipeline();
+		VkShaderModule CreateShaderModule(const std::vector<char>& code);
+		void CreateRenderPass();
+
 		#pragma endregion
 	};
 }
