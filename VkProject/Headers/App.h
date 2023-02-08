@@ -131,6 +131,7 @@ namespace Core
 
 		void CreateCommandPool();
 		void CreateCommandBuffer();
+		void RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex);
 
 		#pragma endregion
 	};
