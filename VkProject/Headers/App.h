@@ -59,7 +59,11 @@ namespace Core
 		const char** m_glfwExtensions;
 		VkDebugUtilsMessengerEXT m_debugMessenger;
 
+		VkQueue graphicsQueue;
+		VkQueue presentQueue;
+
 		void MainLoop();
+		void DrawFrame();
 		void Destroy();
 
 		#pragma region VkSetup
@@ -86,6 +90,10 @@ namespace Core
 
 		VkCommandPool commandPool;
 		VkCommandBuffer commandBuffer;
+
+		VkSemaphore imageAvailableSemaphore;
+		VkSemaphore renderFinishedSemaphore;
+		VkFence inFlightFence;
 
 		// Pipeline var
 		VkPipeline graphicsPipeline;
@@ -132,6 +140,7 @@ namespace Core
 		void CreateCommandPool();
 		void CreateCommandBuffer();
 		void RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex);
+		void CreateSyncObjects();
 
 		#pragma endregion
 	};

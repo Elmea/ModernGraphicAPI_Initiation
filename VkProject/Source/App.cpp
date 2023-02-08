@@ -789,6 +789,22 @@ void App::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex
 }
     #pragma endregion
 
+void App::CreateSyncObjects()
+{
+    VkSemaphoreCreateInfo semaphoreInfo{};
+    semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+
+    VkFenceCreateInfo fenceInfo{};
+    fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+
+    if (vkCreateSemaphore(m_logicalDevice, &semaphoreInfo, nullptr, &imageAvailableSemaphore) != VK_SUCCESS ||
+        vkCreateSemaphore(m_logicalDevice, &semaphoreInfo, nullptr, &renderFinishedSemaphore) != VK_SUCCESS ||
+        vkCreateFence(m_logicalDevice, &fenceInfo, nullptr, &inFlightFence) != VK_SUCCESS) 
+    {
+        throw std::runtime_error("Failed to create semaphores");
+    }
+}
+
     #pragma region Setup
 void App::CreateVkInstance()
 {
@@ -903,6 +919,34 @@ void App::MainLoop()
     while (!glfwWindowShouldClose(m_window->Get()))
     {
         glfwPollEvents();
+        DrawFrame();
+    }
+}
+
+void App::DrawFrame()
+{
+    uint32_t imageIndex;
+    vkAcquireNextImageKHR(m_logicalDevice, swapChain, UINT64_MAX, imageAvailableSemaphore, VK_NULL_HANDLE, &imageIndex);
+    vkResetCommandBuffer(commandBuffer, 0);
+    RecordCommandBuffer(commandBuffer, imageIndex);
+
+    VkSubmitInfo submitInfo{};
+    submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+
+    VkSemaphore waitSemaphores[] { imageAvailableSemaphore };
+    VkPipelineStageFlags waitStages[] { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
+    submitInfo.waitSemaphoreCount = 1;
+    submitInfo.pWaitSemaphores = waitSemaphores;
+    submitInfo.pWaitDstStageMask = waitStages;
+    submitInfo.commandBufferCount = 1;
+    submitInfo.pCommandBuffers = &commandBuffer;
+    VkSemaphore signalSemaphores[] { renderFinishedSemaphore };
+    submitInfo.signalSemaphoreCount = 1;
+    submitInfo.pSignalSemaphores = signalSemaphores;
+
+    if (vkQueueSubmit(graphicsQueue, 1, &submitInfo, inFlightFence) != VK_SUCCESS) 
+    {
+        throw std::runtime_error("failed to submit draw command buffer!");
     }
 }
 
@@ -928,6 +972,10 @@ void App::Destroy()
     {
         vkDestroyFramebuffer(m_logicalDevice, framebuffer, nullptr);
     }
+
+    vkDestroySemaphore(m_logicalDevice, imageAvailableSemaphore, nullptr);
+    vkDestroySemaphore(m_logicalDevice, renderFinishedSemaphore, nullptr);
+    vkDestroyFence(m_logicalDevice, inFlightFence, nullptr);
 
     vkDestroyDevice(m_logicalDevice, nullptr);
     vkDestroyInstance(m_instance, nullptr);
