@@ -117,6 +117,8 @@ namespace Core
 		const char** m_glfwExtensions;
 		VkDebugUtilsMessengerEXT m_debugMessenger;
 
+		VkBuffer vertexBuffer;
+		VkDeviceMemory vertexBufferMemory;
 
 		// Physical device var
 		VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
@@ -195,6 +197,9 @@ namespace Core
 		void CreateCommandBuffer();
 		void RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex);
 		void CreateSyncObjects();
+
+		void CreateVertexBuffer();
+		uint32_t FindMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
 	};
 
 }

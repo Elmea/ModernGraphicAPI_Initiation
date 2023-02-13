@@ -530,7 +530,6 @@ void VkRenderer::CreateGraphicsPipeline()
 
     VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
     {
-        VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
         vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
 
         VkVertexInputBindingDescription bindingDescription = Vertex::GetBindingDescription();
@@ -791,7 +790,11 @@ void VkRenderer::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t ima
     scissor.extent = swapChainExtent;
     vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 
-    vkCmdDraw(commandBuffer, 3, 1, 0, 0);
+    VkBuffer vertexBuffers[] = { vertexBuffer };
+    VkDeviceSize offsets[] = { 0 };
+    vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
+
+    vkCmdDraw(commandBuffer, static_cast<uint32_t>(vertices.size()), 1, 0, 0);
 
     vkCmdEndRenderPass(commandBuffer);
 
@@ -928,9 +931,63 @@ void VkRenderer::InitVulkan()
     CreateGraphicsPipeline();
     CreateFramebuffers();
     CreateCommandPool();
+    CreateVertexBuffer();
     CreateCommandBuffer();
     CreateSyncObjects();
 }
+#pragma endregion
+
+uint32_t VkRenderer::FindMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties)
+{
+    VkPhysicalDeviceMemoryProperties memProperties;
+    vkGetPhysicalDeviceMemoryProperties(physicalDevice, &memProperties);
+    
+    for (uint32_t i = 0; i < memProperties.memoryTypeCount; i++) 
+    {
+        if ((typeFilter & (1 << i)) && (memProperties.memoryTypes[i].propertyFlags & properties) == properties)
+        {
+            return i;
+        }
+    }
+
+    throw std::runtime_error("failed to find suitable memory type!");
+
+}
+
+void VkRenderer::CreateVertexBuffer()
+{
+    VkBufferCreateInfo bufferInfo{};
+    bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    bufferInfo.size = sizeof(vertices[0]) * vertices.size();
+    bufferInfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
+    bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+
+    if (vkCreateBuffer(m_logicalDevice, &bufferInfo, nullptr, &vertexBuffer) != VK_SUCCESS) 
+    {
+        throw std::runtime_error("failed to create vertex buffer!");
+    }
+
+    VkMemoryRequirements memRequirements;
+    vkGetBufferMemoryRequirements(m_logicalDevice, vertexBuffer, &memRequirements);
+    
+    VkMemoryAllocateInfo allocInfo{};
+    allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    allocInfo.allocationSize = memRequirements.size;
+    allocInfo.memoryTypeIndex = FindMemoryType(memRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+
+    if (vkAllocateMemory(m_logicalDevice, &allocInfo, nullptr, &vertexBufferMemory) != VK_SUCCESS)
+    {
+        throw std::runtime_error("failed to allocate vertex buffer memory!");
+    }
+
+    vkBindBufferMemory(m_logicalDevice, vertexBuffer, vertexBufferMemory, 0);
+
+    void* data;
+    vkMapMemory(m_logicalDevice, vertexBufferMemory, 0, bufferInfo.size, 0, &data);
+    memcpy(data, vertices.data(), (size_t)bufferInfo.size);
+    vkUnmapMemory(m_logicalDevice, vertexBufferMemory);
+}
+
 #pragma endregion
 
 void VkRenderer::RecreateSwapchain()
@@ -1029,6 +1086,9 @@ void VkRenderer::Destroy()
 {
     CleanSwapChain();
 
+    vkDestroyBuffer(m_logicalDevice, vertexBuffer, nullptr);
+    vkFreeMemory(m_logicalDevice, vertexBufferMemory, nullptr);
+
     vkDestroyPipelineLayout(m_logicalDevice, pipelineLayout, nullptr);
     vkDestroyPipeline(m_logicalDevice, graphicsPipeline, nullptr);
     vkDestroyRenderPass(m_logicalDevice, renderPass, nullptr);
@@ -1052,4 +1112,3 @@ void VkRenderer::Destroy()
     std::cout << "\033[35;1m" << "All destruction done successfuly" << "\033[0m" << std::endl;
 }
 
-#pragma endregion
