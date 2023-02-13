@@ -51,6 +51,10 @@ namespace Core
 		void Run();
 
 	private:
+		const int MAX_FRAMES_IN_FLIGHT = 2;
+
+		uint32_t currentFrame = 0;
+
 		Window* m_window;
 
 		VkInstance m_instance;
@@ -86,11 +90,11 @@ namespace Core
 		std::vector<VkFramebuffer> swapChainFramebuffers;
 
 		VkCommandPool commandPool;
-		VkCommandBuffer commandBuffer;
+		std::vector<VkCommandBuffer> commandBuffers;
 
-		VkSemaphore imageAvailableSemaphore;
-		VkSemaphore renderFinishedSemaphore;
-		VkFence inFlightFence;
+		std::vector<VkSemaphore> imageAvailableSemaphores;
+		std::vector<VkSemaphore> renderFinishedSemaphores;
+		std::vector<VkFence> inFlightFences;
 
 		// Pipeline var
 		VkPipeline graphicsPipeline;
