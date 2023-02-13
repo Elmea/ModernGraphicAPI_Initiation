@@ -37,6 +37,7 @@ void App::MainLoop()
     while (!glfwWindowShouldClose(m_window->Get()))
     {
         glfwPollEvents();
+        vkRenderer->UpdateUniformBuffer();
         vkRenderer->DrawFrame();
     }
 

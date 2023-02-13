@@ -75,6 +75,14 @@ namespace Core
 			return attributeDescriptions;
 		}
 	};
+
+	struct UniformBufferObject 
+	{
+		glm::mat4 model;
+		glm::mat4 view;
+		glm::mat4 proj;
+	};
+
 #pragma endregion
 
 	const std::vector<Vertex> vertices = {
@@ -95,6 +103,7 @@ namespace Core
 
 		void InitVulkan();
 
+		void UpdateUniformBuffer();
 		void DrawFrame();
 
 		VkDevice GetLogicalDevice() { return m_logicalDevice; }
@@ -126,6 +135,14 @@ namespace Core
 		VkDeviceMemory vertexBufferMemory;
 		VkBuffer indexBuffer;
 		VkDeviceMemory indexBufferMemory;
+
+		std::vector<VkBuffer> uniformBuffers;
+		std::vector<VkDeviceMemory> uniformBuffersMemory;
+		std::vector<void*> uniformBuffersMapped;
+
+		VkDescriptorSetLayout descriptorSetLayout;
+		VkDescriptorPool descriptorPool;
+		std::vector<VkDescriptorSet> descriptorSets;
 
 		// Physical device var
 		VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
@@ -210,6 +227,12 @@ namespace Core
 		uint32_t FindMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
 		void CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
 		void CreateIndexBuffer();
+
+		void CreateUniformBuffers();
+
+		void CreateDescriptorSetLayout();
+		void CreateDescriptorPool();
+		void CreateDescriptorSets();
 	};
 
 }
