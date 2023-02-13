@@ -14,6 +14,7 @@ const bool enableValidationLayers = true;
 
 namespace Core
 {
+
 	const std::vector<const char*> validationLayers { "VK_LAYER_KHRONOS_validation" };
 
 	const std::vector<const char*> deviceExtensions { VK_KHR_SWAPCHAIN_EXTENSION_NAME };
@@ -49,6 +50,7 @@ namespace Core
 		~App() { Destroy(); }
 		
 		void Run();
+		bool framebufferResized = false;
 
 	private:
 		const int MAX_FRAMES_IN_FLIGHT = 2;
@@ -124,11 +126,13 @@ namespace Core
 		// Vulkan window Setup
 		void CreateSurface();
 		
-		// Vulkan Swapchain setup
+		// Vulkan Swapchain
 		SwapChainSupportDetails QuerySwapChainSupport(VkPhysicalDevice device);
 		VkExtent2D ChooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities);
 		void CreateSwapChain();
 		void CreateFramebuffers();
+		void RecreateSwapchain();
+		void CleanSwapChain();
 
 		// Image view setup
 		void CreateImageViews();

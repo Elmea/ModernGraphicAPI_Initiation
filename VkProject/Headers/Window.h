@@ -5,6 +5,8 @@
 
 namespace Core
 {
+	class App;
+
 	struct WindowInfo
 	{
 		std::string name;
@@ -18,7 +20,7 @@ namespace Core
 		GLFWwindow* m_window;
 
 	public:
-		Window(WindowInfo info);
+		Window(WindowInfo info, App* app);
 		GLFWwindow* Get();
 		void Destroy();
 	};

@@ -17,11 +17,10 @@
 
 using namespace Core;
 
-
 App::App(WindowInfo windowInfo) 
 {
     glfwInit();
-    m_window = new Window(windowInfo);
+    m_window = new Window(windowInfo, this);
     m_glfwExtensions = glfwGetRequiredInstanceExtensions(&m_glfwExtensionCount);
 }
 
@@ -305,7 +304,7 @@ void App::CreateSurface()
 }
     #pragma endregion
 
-    #pragma region SwapChainSetup
+    #pragma region SwapChains
 SwapChainSupportDetails App::QuerySwapChainSupport(VkPhysicalDevice device)
 {
     SwapChainSupportDetails details;
@@ -964,10 +963,23 @@ void App::MainLoop()
 void App::DrawFrame()
 {
     vkWaitForFences(m_logicalDevice, 1, &inFlightFences[currentFrame], VK_TRUE, UINT64_MAX);
-    vkResetFences(m_logicalDevice, 1, &inFlightFences[currentFrame]);
 
     uint32_t imageIndex;
-    vkAcquireNextImageKHR(m_logicalDevice, swapChain, UINT64_MAX, imageAvailableSemaphores[currentFrame], VK_NULL_HANDLE, &imageIndex);
+    VkResult result = vkAcquireNextImageKHR(m_logicalDevice, swapChain, UINT64_MAX, imageAvailableSemaphores[currentFrame], VK_NULL_HANDLE, &imageIndex);
+    
+    if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || framebufferResized)
+    {
+        framebufferResized = false;
+        RecreateSwapchain();
+        return;
+    }
+    else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) 
+    {
+        throw std::runtime_error("Failed to acquire swap chain image");
+    }
+
+    vkResetFences(m_logicalDevice, 1, &inFlightFences[currentFrame]);
+    
     vkResetCommandBuffer(commandBuffers[currentFrame], 0);
     RecordCommandBuffer(commandBuffers[currentFrame], imageIndex);
 
@@ -1006,19 +1018,27 @@ void App::DrawFrame()
     currentFrame = (currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
 }
 
-void App::Destroy() 
+void App::RecreateSwapchain()
 {
-    if (enableValidationLayers) 
-        DestroyDebugUtilsMessengerEXT(m_instance, m_debugMessenger, nullptr);
+    int width = 0, height = 0;
+    glfwGetFramebufferSize(m_window->Get(), &width, &height);
+    while (width == 0 || height == 0) 
+    {
+        glfwGetFramebufferSize(m_window->Get(), &width, &height);
+        glfwWaitEvents();
+    }
 
-    vkDestroyPipelineLayout(m_logicalDevice, pipelineLayout, nullptr);
-    vkDestroyPipeline(m_logicalDevice, graphicsPipeline, nullptr);
-    vkDestroyRenderPass(m_logicalDevice, renderPass, nullptr);
+    vkDeviceWaitIdle(m_logicalDevice);
 
-    vkDestroySurfaceKHR(m_instance, m_surface, nullptr);
-    vkDestroySwapchainKHR(m_logicalDevice, swapChain, nullptr);
-    vkDestroyCommandPool(m_logicalDevice, commandPool, nullptr);
+    CleanSwapChain();
 
+    CreateSwapChain();
+    CreateImageViews();
+    CreateFramebuffers();
+}
+
+void App::CleanSwapChain()
+{
     for (VkImageView imageView : swapChainImageViews)
     {
         vkDestroyImageView(m_logicalDevice, imageView, nullptr);
@@ -1029,12 +1049,29 @@ void App::Destroy()
         vkDestroyFramebuffer(m_logicalDevice, framebuffer, nullptr);
     }
 
+    vkDestroySwapchainKHR(m_logicalDevice, swapChain, nullptr);
+}
+
+void App::Destroy() 
+{
+    CleanSwapChain();
+
+    vkDestroyPipelineLayout(m_logicalDevice, pipelineLayout, nullptr);
+    vkDestroyPipeline(m_logicalDevice, graphicsPipeline, nullptr);
+    vkDestroyRenderPass(m_logicalDevice, renderPass, nullptr);
+
     for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) 
     {
         vkDestroySemaphore(m_logicalDevice, renderFinishedSemaphores[i], nullptr);
         vkDestroySemaphore(m_logicalDevice, imageAvailableSemaphores[i], nullptr);
         vkDestroyFence(m_logicalDevice, inFlightFences[i], nullptr);
     }
+    
+    vkDestroyCommandPool(m_logicalDevice, commandPool, nullptr);
+    vkDestroySurfaceKHR(m_instance, m_surface, nullptr);
+
+    if (enableValidationLayers) 
+        DestroyDebugUtilsMessengerEXT(m_instance, m_debugMessenger, nullptr);
 
     vkDestroyDevice(m_logicalDevice, nullptr);
     vkDestroyInstance(m_instance, nullptr);
