@@ -283,12 +283,14 @@ void App::CreateLogicalDevice()
         throw std::runtime_error("Failed to create a logical device");
 
     vkGetDeviceQueue(m_logicalDevice, physicalDeviceQueueFamily.presentFamily.value(), 0, &m_graphicsQueue);
+    vkGetDeviceQueue(m_logicalDevice, physicalDeviceQueueFamily.presentFamily.value(), 0, &m_presentQueue);
 
     std::cout << "\033[32;1m" << "Logical device created successfuly" << "\033[0m" << std::endl;
 }
     #pragma endregion
 
     #pragma region WindowSetup
+
 void App::CreateSurface()
 {
     VkWin32SurfaceCreateInfoKHR createInfo{};
@@ -667,12 +669,22 @@ void App::CreateRenderPass()
     subpass.colorAttachmentCount = 1;
     subpass.pColorAttachments = &colorAttachmentRef;
 
+    VkSubpassDependency dependency{};
+    dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
+    dependency.dstSubpass = 0;
+    dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    dependency.srcAccessMask = 0;
+    dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+
     VkRenderPassCreateInfo renderPassInfo{};
     renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
     renderPassInfo.attachmentCount = 1;
     renderPassInfo.pAttachments = &colorAttachment;
     renderPassInfo.subpassCount = 1;
     renderPassInfo.pSubpasses = &subpass;
+    renderPassInfo.dependencyCount = 1;
+    renderPassInfo.pDependencies = &dependency;
 
     if (vkCreateRenderPass(m_logicalDevice, &renderPassInfo, nullptr, &renderPass) != VK_SUCCESS) 
     {
@@ -796,12 +808,21 @@ void App::CreateSyncObjects()
 
     VkFenceCreateInfo fenceInfo{};
     fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+    fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
 
-    if (vkCreateSemaphore(m_logicalDevice, &semaphoreInfo, nullptr, &imageAvailableSemaphore) != VK_SUCCESS ||
-        vkCreateSemaphore(m_logicalDevice, &semaphoreInfo, nullptr, &renderFinishedSemaphore) != VK_SUCCESS ||
-        vkCreateFence(m_logicalDevice, &fenceInfo, nullptr, &inFlightFence) != VK_SUCCESS) 
+    if (vkCreateSemaphore(m_logicalDevice, &semaphoreInfo, nullptr, &imageAvailableSemaphore) != VK_SUCCESS) 
     {
-        throw std::runtime_error("Failed to create semaphores");
+        throw std::runtime_error("Failed to create image available semaphores");
+    }
+
+    if (vkCreateSemaphore(m_logicalDevice, &semaphoreInfo, nullptr, &renderFinishedSemaphore) != VK_SUCCESS)
+    {
+        throw std::runtime_error("Failed to create render finished semaphores");
+    }
+
+    if (vkCreateFence(m_logicalDevice, &fenceInfo, nullptr, &inFlightFence) != VK_SUCCESS)
+    {
+        throw std::runtime_error("Failed to create inflight fence");
     }
 }
 
@@ -819,7 +840,7 @@ void App::CreateVkInstance()
     info.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
     info.pEngineName = "No engine";
     info.engineVersion = VK_MAKE_VERSION(1, 0, 0);
-    info.apiVersion = VK_API_VERSION_1_0;
+    info.apiVersion = VK_API_VERSION_1_2;
 
     VkInstanceCreateInfo createInfo{};
     createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
@@ -864,17 +885,21 @@ bool App::CheckValidationLayerSupport()
     std::vector<VkLayerProperties> availableLayers(layerCount);
     vkEnumerateInstanceLayerProperties(&layerCount, availableLayers.data());
 
-    for (const char* layerName : validationLayers) {
+    for (const char* layerName : validationLayers)
+    {
         bool layerFound = false;
 
-        for (const auto& layerProperties : availableLayers) {
-            if (strcmp(layerName, layerProperties.layerName) == 0) {
+        for (const auto& layerProperties : availableLayers) 
+        {
+            if (strcmp(layerName, layerProperties.layerName) == 0)
+            {
                 layerFound = true;
                 break;
             }
         }
 
-        if (!layerFound) {
+        if (!layerFound)
+        {
             return false;
         }
     }
@@ -887,7 +912,7 @@ void App::InitVulkan()
     CreateVkInstance();
     SetupDebugger();
     CreateSurface();
-    PickPhysicalDevice(); 
+    PickPhysicalDevice();
     CreateLogicalDevice();
     CreateSwapChain();
     CreateImageViews();
@@ -895,6 +920,8 @@ void App::InitVulkan()
     CreateGraphicsPipeline();
     CreateFramebuffers();
     CreateCommandPool();
+    CreateCommandBuffer();
+    CreateSyncObjects();
 }
     #pragma endregion
 
@@ -921,10 +948,15 @@ void App::MainLoop()
         glfwPollEvents();
         DrawFrame();
     }
+
+    vkDeviceWaitIdle(m_logicalDevice);
 }
 
 void App::DrawFrame()
 {
+    vkWaitForFences(m_logicalDevice, 1, &inFlightFence, VK_TRUE, UINT64_MAX);
+    vkResetFences(m_logicalDevice, 1, &inFlightFence);
+
     uint32_t imageIndex;
     vkAcquireNextImageKHR(m_logicalDevice, swapChain, UINT64_MAX, imageAvailableSemaphore, VK_NULL_HANDLE, &imageIndex);
     vkResetCommandBuffer(commandBuffer, 0);
@@ -933,21 +965,34 @@ void App::DrawFrame()
     VkSubmitInfo submitInfo{};
     submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 
-    VkSemaphore waitSemaphores[] { imageAvailableSemaphore };
-    VkPipelineStageFlags waitStages[] { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
+    VkSemaphore waitSemaphores[]{ imageAvailableSemaphore };
+    VkPipelineStageFlags waitStages[]{ VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
     submitInfo.waitSemaphoreCount = 1;
     submitInfo.pWaitSemaphores = waitSemaphores;
     submitInfo.pWaitDstStageMask = waitStages;
     submitInfo.commandBufferCount = 1;
     submitInfo.pCommandBuffers = &commandBuffer;
-    VkSemaphore signalSemaphores[] { renderFinishedSemaphore };
+
+    VkSemaphore signalSemaphores[]{ renderFinishedSemaphore };
     submitInfo.signalSemaphoreCount = 1;
     submitInfo.pSignalSemaphores = signalSemaphores;
 
-    if (vkQueueSubmit(graphicsQueue, 1, &submitInfo, inFlightFence) != VK_SUCCESS) 
+    if (vkQueueSubmit(m_graphicsQueue, 1, &submitInfo, inFlightFence) != VK_SUCCESS)
     {
         throw std::runtime_error("failed to submit draw command buffer!");
     }
+
+    VkPresentInfoKHR presentInfo{};
+    presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+    presentInfo.waitSemaphoreCount = 1;
+    presentInfo.pWaitSemaphores = signalSemaphores;
+
+    VkSwapchainKHR swapChains[] = { swapChain };
+    presentInfo.swapchainCount = 1;
+    presentInfo.pSwapchains = swapChains;
+    presentInfo.pImageIndices = &imageIndex;
+
+    vkQueuePresentKHR(m_presentQueue, &presentInfo);
 }
 
 void App::Destroy() 

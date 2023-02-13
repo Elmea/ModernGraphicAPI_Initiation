@@ -59,9 +59,6 @@ namespace Core
 		const char** m_glfwExtensions;
 		VkDebugUtilsMessengerEXT m_debugMessenger;
 
-		VkQueue graphicsQueue;
-		VkQueue presentQueue;
-
 		void MainLoop();
 		void DrawFrame();
 		void Destroy();
