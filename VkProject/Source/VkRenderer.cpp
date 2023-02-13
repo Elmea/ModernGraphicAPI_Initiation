@@ -503,8 +503,8 @@ VkShaderModule VkRenderer::CreateShaderModule(const std::vector<char>& code)
 
 void VkRenderer::CreateGraphicsPipeline()
 {
-    auto vertShaderCode = readFile("Shaders/VertexShader.spv");
-    auto fragShaderCode = readFile("Shaders/FragmentShader.spv");
+    auto vertShaderCode = readFile("Shaders/CompiledShaders/VertexShader.spv");
+    auto fragShaderCode = readFile("Shaders/CompiledShaders/FragmentShader.spv");
 
     VkShaderModule vertShaderModule = CreateShaderModule(vertShaderCode);
     VkShaderModule fragShaderModule = CreateShaderModule(fragShaderCode);
@@ -530,9 +530,16 @@ void VkRenderer::CreateGraphicsPipeline()
 
     VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
     {
+        VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
         vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-        vertexInputInfo.vertexBindingDescriptionCount = 0;
-        vertexInputInfo.vertexAttributeDescriptionCount = 0;
+
+        VkVertexInputBindingDescription bindingDescription = Vertex::GetBindingDescription();
+        auto attributeDescriptions = Vertex::GetAttributeDescriptions();
+
+        vertexInputInfo.vertexBindingDescriptionCount = 1;
+        vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(attributeDescriptions.size());
+        vertexInputInfo.pVertexBindingDescriptions = &bindingDescription;
+        vertexInputInfo.pVertexAttributeDescriptions = attributeDescriptions.data();
     }
 
     VkPipelineInputAssemblyStateCreateInfo inputAssembly{};

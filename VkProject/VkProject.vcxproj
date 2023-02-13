@@ -170,6 +170,7 @@
   <ItemGroup>
     <None Include="Shaders\CompileShaders.bat" />
     <None Include="Shaders\FragmentShader.frag" />
+    <None Include="Shaders\Triangle.vert" />
     <None Include="Shaders\VertexShader.vert" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

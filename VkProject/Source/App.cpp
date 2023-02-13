@@ -18,7 +18,6 @@ App::~App()
     delete m_window;
 }
 
-
 void App::Run()
 {
     try

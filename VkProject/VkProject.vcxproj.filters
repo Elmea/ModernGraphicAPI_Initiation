@@ -52,6 +52,9 @@
     <None Include="Shaders\FragmentShader.frag">
       <Filter>Fichiers de ressources</Filter>
     </None>
+    <None Include="Shaders\Triangle.vert">
+      <Filter>Fichiers de ressources</Filter>
+    </None>
     <None Include="Shaders\VertexShader.vert">
       <Filter>Fichiers de ressources</Filter>
     </None>
