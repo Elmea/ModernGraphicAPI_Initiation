@@ -14,6 +14,9 @@ const bool enableValidationLayers = false;
 const bool enableValidationLayers = true;
 #endif
 
+const std::string MODEL_PATH = "Ressource/Obj/viking_room.obj";
+const std::string TEXTURE_PATH = "Ressource/Textures/viking_room.png";
+
 namespace Core
 {
 	bool HasStencilComponent(VkFormat format);
@@ -92,7 +95,7 @@ namespace Core
 	};
 
 #pragma endregion
-
+	/*
 	const std::vector<Vertex> vertices = {
 		{{-0.5f, -0.5f, 0.0f}, {1.0f, 0.0f, 0.0f}, {1.0f, 0.0f}},
 		{{0.5f, -0.5f, 0.0f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
@@ -108,7 +111,7 @@ namespace Core
 	const std::vector<uint16_t> indices = {
 		0, 1, 2, 2, 3, 0,
 		4, 5, 6, 6, 7, 4
-	};
+	};*/
 
 	class VkRenderer
 	{
@@ -145,6 +148,8 @@ namespace Core
 		const char** m_glfwExtensions;
 		VkDebugUtilsMessengerEXT m_debugMessenger;
 
+		std::vector<Vertex> vertices;
+		std::vector<uint32_t> indices;
 		VkBuffer vertexBuffer;
 		VkDeviceMemory vertexBufferMemory;
 		VkBuffer indexBuffer;
@@ -273,5 +278,7 @@ namespace Core
 		void CreateDepthResources();
 		VkFormat FindSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features);
 		VkFormat FindDepthFormat();
+
+		void LoadModel();
 	};
 }
