@@ -1276,6 +1276,11 @@ void VkRenderer::UpdateUniformBuffer()
 void VkRenderer::Destroy()
 {
     CleanSwapChain();
+    vkDestroyPipelineLayout(m_logicalDevice, pipelineLayout, nullptr);
+    vkDestroyPipeline(m_logicalDevice, graphicsPipeline, nullptr);
+    vkDestroyRenderPass(m_logicalDevice, renderPass, nullptr);
+
+    vkDestroyDescriptorPool(m_logicalDevice, descriptorPool, nullptr);
 
     vkDestroyDescriptorSetLayout(m_logicalDevice, descriptorSetLayout, nullptr);
 
@@ -1284,16 +1289,6 @@ void VkRenderer::Destroy()
 
     vkDestroyBuffer(m_logicalDevice, indexBuffer, nullptr);
     vkFreeMemory(m_logicalDevice, indexBufferMemory, nullptr);
-
-    vkDestroyPipelineLayout(m_logicalDevice, pipelineLayout, nullptr);
-    vkDestroyPipeline(m_logicalDevice, graphicsPipeline, nullptr);
-    vkDestroyRenderPass(m_logicalDevice, renderPass, nullptr);
-
-    vkDestroyDescriptorSetLayout(m_logicalDevice, descriptorSetLayout, nullptr);
-
-    vkDestroyDescriptorPool(m_logicalDevice, descriptorPool, nullptr);
-
-    vkDestroyDescriptorSetLayout(m_logicalDevice, descriptorSetLayout, nullptr);
 
     for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
     {

@@ -163,7 +163,6 @@
   <ItemGroup>
     <ClInclude Include="Headers\App.h" />
     <ClInclude Include="Headers\glfwInclude.h" />
-    <ClInclude Include="Headers\glmInclude.h" />
     <ClInclude Include="Headers\VkRenderer.h" />
     <ClInclude Include="Headers\Window.h" />
   </ItemGroup>

@@ -35,9 +35,6 @@
     <ClInclude Include="Headers\glfwInclude.h">
       <Filter>Fichiers d%27en-tête</Filter>
     </ClInclude>
-    <ClInclude Include="Headers\glmInclude.h">
-      <Filter>Fichiers d%27en-tête</Filter>
-    </ClInclude>
     <ClInclude Include="Headers\App.h">
       <Filter>Fichiers d%27en-tête</Filter>
     </ClInclude>
