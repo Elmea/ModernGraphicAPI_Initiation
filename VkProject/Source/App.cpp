@@ -2,8 +2,6 @@
 
 #include "App.h"
 
-#define ROT_ACCELERATION 0.01f
-
 using namespace Core;
 
 App::App(WindowInfo windowInfo) 
@@ -84,14 +82,6 @@ void App::ProcessInput()
 
         inputs.mouseX = newMouseX;
         inputs.mouseY = newMouseY;
-
-        if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS)
-            rotationSpeed -= ROT_ACCELERATION;
-
-        if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS)
-            rotationSpeed += ROT_ACCELERATION;
-
-        rotationSpeed = 0;
     }
 }
 
