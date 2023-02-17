@@ -45,6 +45,19 @@ void App::ProcessInput()
 
     if (!mouseCaptured)
     {
+        inputs.forward = false;
+        inputs.backward = false;
+        inputs.left = false;
+        inputs.right = false;
+        inputs.up = false;
+        inputs.down = false;
+
+        inputs.mouseDeltaX = 0;
+        inputs.mouseDeltaY = 0;
+
+        inputs.mouseX = 0;
+        inputs.mouseY = 0;
+
         if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_2) == GLFW_PRESS)
         {
             double newMouseX, newMouseY;
@@ -59,15 +72,6 @@ void App::ProcessInput()
     }
     else
     {
-        if (glfwGetKey(window, GLFW_KEY_TAB) == GLFW_PRESS)
-        {
-            if (mouseCaptured)
-            {
-                mouseCaptured = false;
-                glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-            }
-        }
-
         inputs.forward = glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS;
         inputs.backward = glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS;
         inputs.left = glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS;
@@ -82,6 +86,15 @@ void App::ProcessInput()
 
         inputs.mouseX = newMouseX;
         inputs.mouseY = newMouseY;
+
+        if (glfwGetKey(window, GLFW_KEY_TAB) == GLFW_PRESS)
+        {
+            if (mouseCaptured)
+            {
+                mouseCaptured = false;
+                glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+            }
+        }
     }
 }
 
