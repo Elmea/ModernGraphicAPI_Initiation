@@ -25,6 +25,7 @@
 #define TINYOBJLOADER_IMPLEMENTATION
 #include <tiny_obj_loader.h>
 
+#include "Camera.h"
 
 #ifdef max
 #undef max
@@ -348,12 +349,13 @@ VkSurfaceFormatKHR ChooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>
 {
     for (const VkSurfaceFormatKHR& format : availableFormats)
     {
-        if (format.format == VK_FORMAT_B8G8R8A8_SRGB && format.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR) {
+        if (format.format == VK_FORMAT_B8G8R8A8_SRGB && format.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR) 
+        {
             return format;
         }
-
-        return availableFormats[0];
     }
+
+    return availableFormats[0];
 }
 
 // Choose a swap chains presentation mode, we'll use mailbox if its available
@@ -1281,7 +1283,8 @@ void VkRenderer::DrawFrame()
     vkWaitForFences(m_logicalDevice, 1, &inFlightFences[currentFrame], VK_TRUE, UINT64_MAX);
 
     uint32_t imageIndex;
-    VkResult result = vkAcquireNextImageKHR(m_logicalDevice, swapChain, UINT64_MAX, imageAvailableSemaphores[currentFrame], VK_NULL_HANDLE, &imageIndex);
+    VkResult result = vkAcquireNextImageKHR(m_logicalDevice, swapChain, UINT64_MAX,
+                                        imageAvailableSemaphores[currentFrame], VK_NULL_HANDLE, &imageIndex);
 
     if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || framebufferResized)
     {
@@ -1334,17 +1337,12 @@ void VkRenderer::DrawFrame()
     currentFrame = (currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
 }
 
-void VkRenderer::UpdateUniformBuffer()
+void VkRenderer::UpdateUniformBuffer(float speed, Camera& camera)
 {
-    static auto startTime = std::chrono::high_resolution_clock::now();
-
-    auto currentTime = std::chrono::high_resolution_clock::now();
-    float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
-
     UniformBufferObject ubo{};
-    ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f) / 2.f, glm::vec3(0.0f, 0.0f, 1.0f));
-    ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-    ubo.proj = glm::perspective(glm::radians(45.0f), swapChainExtent.width / (float)swapChainExtent.height, 0.1f, 10.0f);
+    ubo.model = glm::rotate(glm::mat4(1.0f), glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+    ubo.view = camera.GetView();
+    ubo.proj = camera.GetPerspective();
     ubo.proj[1][1] *= -1;
 
     memcpy(uniformBuffersMapped[currentFrame], &ubo, sizeof(ubo));
@@ -1381,7 +1379,8 @@ void VkRenderer::CreateTextureImage()
     vkFreeMemory(m_logicalDevice, stagingBufferMemory, nullptr);
 }
 
-void VkRenderer::CreateImage(uint32_t width, uint32_t height, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory)
+void VkRenderer::CreateImage(uint32_t width, uint32_t height, VkFormat format, VkImageTiling tiling,
+                VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory)
 {
     VkImageCreateInfo imageInfo{};
     imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;

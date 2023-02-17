@@ -156,6 +156,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Source\App.cpp" />
+    <ClCompile Include="Source\Camera.cpp" />
     <ClCompile Include="Source\main.cpp" />
     <ClCompile Include="Source\VkRenderer.cpp" />
     <ClCompile Include="Source\Window.cpp" />
@@ -165,12 +166,15 @@
     <ClInclude Include="Headers\glfwInclude.h" />
     <ClInclude Include="Headers\VkRenderer.h" />
     <ClInclude Include="Headers\Window.h" />
+    <ClInclude Include="Source\Camera.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Shaders\CompileShaders.bat" />
     <None Include="Shaders\FragmentShader.frag" />
-    <None Include="Shaders\Triangle.vert" />
     <None Include="Shaders\VertexShader.vert" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="Shaders\TriangleVertex.vert" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

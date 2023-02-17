@@ -8,6 +8,8 @@
 
 #include "Window.h"
 
+#include "Camera.h"
+
 #ifdef NDEBUG
 const bool enableValidationLayers = false;
 #else
@@ -95,23 +97,6 @@ namespace Core
 	};
 
 #pragma endregion
-	/*
-	const std::vector<Vertex> vertices = {
-		{{-0.5f, -0.5f, 0.0f}, {1.0f, 0.0f, 0.0f}, {1.0f, 0.0f}},
-		{{0.5f, -0.5f, 0.0f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
-		{{0.5f, 0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}},
-		{{-0.5f, 0.5f, 0.0f}, {1.0f, 1.0f, 1.0f}, {1.0f, 1.0f}},
-
-		{ {-0.5f, -0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
-		{{0.5f, -0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}, {1.0f, 0.0f}},
-		{{0.5f, 0.5f, -0.5f}, {0.0f, 0.0f, 1.0f}, {1.0f, 1.0f}},
-		{{-0.5f, 0.5f, -0.5f}, {1.0f, 1.0f, 1.0f}, {0.0f, 1.0f}}
-	};
-
-	const std::vector<uint16_t> indices = {
-		0, 1, 2, 2, 3, 0,
-		4, 5, 6, 6, 7, 4
-	};*/
 
 	class VkRenderer
 	{
@@ -120,7 +105,7 @@ namespace Core
 
 		void InitVulkan();
 
-		void UpdateUniformBuffer();
+		void UpdateUniformBuffer(float speed, Camera& camera);
 		void DrawFrame();
 
 		VkDevice GetLogicalDevice() { return m_logicalDevice; }
@@ -132,10 +117,7 @@ namespace Core
 			m_glfwExtensions = glfwGetRequiredInstanceExtensions(&m_glfwExtensionCount);
 		}
 
-		~VkRenderer()
-		{
-			Destroy();
-		}
+		~VkRenderer() { Destroy(); }
 
 	private:
 		const int MAX_FRAMES_IN_FLIGHT = 2;

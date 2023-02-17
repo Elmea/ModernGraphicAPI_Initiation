@@ -27,6 +27,9 @@
     <ClCompile Include="Source\VkRenderer.cpp">
       <Filter>Fichiers sources</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Camera.cpp">
+      <Filter>Fichiers sources</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Headers\Window.h">
@@ -41,15 +44,15 @@
     <ClInclude Include="Headers\VkRenderer.h">
       <Filter>Fichiers d%27en-tête</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Camera.h">
+      <Filter>Fichiers d%27en-tête</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="Shaders\CompileShaders.bat">
       <Filter>Fichiers de ressources</Filter>
     </None>
     <None Include="Shaders\FragmentShader.frag">
-      <Filter>Fichiers de ressources</Filter>
-    </None>
-    <None Include="Shaders\Triangle.vert">
       <Filter>Fichiers de ressources</Filter>
     </None>
     <None Include="Shaders\VertexShader.vert">
